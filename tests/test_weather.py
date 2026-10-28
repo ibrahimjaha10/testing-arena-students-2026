@@ -69,6 +69,13 @@ def test_filter_by_temperature_duplicates():
     res = filter_by_temperature(m, 10.0, 20.0)
     assert len(res) == 2
 
+def test_filter_exact_same_limits():
+    # filter mit identischer unter- und obergrenze (lower == upper)
+    m = [("A", 100, 15.0), ("B", 200, 20.0)]
+    res = filter_by_temperature(m, 15.0, 15.0)
+    assert len(res) == 1
+    assert res[0] == ("A", 100, 15.0)
+
 # average_temperature
 def test_average_temperature_calc():
     m = [("Köln", 100, 10.0), ("Köln", 200, 20.0), ("Bonn", 300, 50.0)]
@@ -111,7 +118,7 @@ def test_hottest_measurement_all_negative():
     m = [("A", 100, -20.0), ("B", 200, -5.0), ("C", 300, -15.0)]
     assert hottest_measurement(m) == ("B", 200, -5.0)
 
-# mutation check
+# mutation check und typen-kontrolle
 def test_no_mutation_of_input_lists():
     # die liste darf von den funktionen nicht verändert werden
     original_list = [("A", 200, 10.0), ("B", 100, 30.0), ("C", 300, 20.0)]
@@ -122,3 +129,16 @@ def test_no_mutation_of_input_lists():
     hottest_measurement(original_list)
     
     assert original_list == list_copy
+
+def test_strict_return_types_and_identities():
+    # 1. parse_measurement MUSS zwingend ein Tupel sein (keine Liste!)
+    result = parse_measurement("Köln;14:21;21.7")
+    assert isinstance(result, tuple)
+    
+    # 2. filter_by_temperature MUSS zwingend eine Liste sein
+    m = [("Köln", 100, 15.0)]
+    res = filter_by_temperature(m, 10.0, 20.0)
+    assert isinstance(res, list)
+    
+    # 3. filter_by_temperature muss eine NEUE Liste im Speicher sein (is not)
+    assert res is not m
