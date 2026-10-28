@@ -7,6 +7,7 @@ from weather import (
     hottest_measurement,
 )
 
+# parse_time
 def test_parse_time_normal():
     assert parse_time("00:00") == 0
     assert parse_time("23:59") == 1439
@@ -16,10 +17,13 @@ def test_parse_time_normal():
     "24:00", "12:60", "-1:00", "12:-1", "12", "12:30:15", "ab:cd"
 ])
 def test_parse_time_errors(invalid_time):
+    # check auf value errors bei falschem format
     with pytest.raises(ValueError):
         parse_time(invalid_time)
 
+# parse_measurement
 def test_parse_measurement_spaces():
+    # leerzeichen sollen ignoriert werden
     city, time, temp = parse_measurement("  Düsseldorf  ;  09:05  ;  18.3  ")
     assert city == "Düsseldorf"
     assert time == 545
@@ -27,15 +31,17 @@ def test_parse_measurement_spaces():
 
 def test_parse_measurement_bad_input():
     with pytest.raises(ValueError):
-        parse_measurement(123)
+        parse_measurement(123) 
     with pytest.raises(ValueError):
-        parse_measurement("Köln;14:21")
+        parse_measurement("Köln;14:21")  # feld fehlt
     with pytest.raises(ValueError):
-        parse_measurement(" ;14:21;21.7")
+        parse_measurement(" ;14:21;21.7")  # stadt leer
     with pytest.raises(ValueError):
-        parse_measurement("Köln;14:21;kalt")
+        parse_measurement("Köln;14:21;kalt")  # falscher typ
 
+# filter_by_temperature
 def test_filter_by_temperature_exact_limits():
+    # grenzen sind inklusiv
     measurements = [
         ("A", 100, 10.0), ("B", 200, 15.0), ("C", 300, 20.0)
     ]
@@ -43,9 +49,11 @@ def test_filter_by_temperature_exact_limits():
     assert len(res) == 3
 
 def test_filter_by_temperature_wrong_params():
+    # fehler wenn lower > upper
     with pytest.raises(ValueError):
         filter_by_temperature([], 20.0, 10.0)
 
+# average_temperature
 def test_average_temperature_calc():
     m = [("Köln", 100, 10.0), ("Köln", 200, 20.0), ("Bonn", 300, 50.0)]
     assert average_temperature(m, "Köln") == 15.0
@@ -54,15 +62,24 @@ def test_average_temperature_missing_city():
     with pytest.raises(ValueError):
         average_temperature([("Bonn", 100, 10.0)], "Köln")
 
+# hottest_measurement
 def test_hottest_measurement_normal():
     m = [("A", 100, 10.0), ("B", 200, 20.0)]
     assert hottest_measurement(m) == ("B", 200, 20.0)
 
 def test_hottest_measurement_same_temp():
+    # bei gleicher temperatur entscheidet die uhrzeit
     m1 = ("A", 100, 30.0)
     m2 = ("B", 200, 30.0)
     assert hottest_measurement([m1, m2]) == m1
     assert hottest_measurement([m2, m1]) == m1
+
+def test_hottest_measurement_exact_tie():
+    # gleiche temp und uhrzeit -> reihenfolge entscheidet
+    m1 = ("A", 100, 30.0)
+    m2 = ("B", 100, 30.0)
+    assert hottest_measurement([m1, m2]) == m1
+    assert hottest_measurement([m2, m1]) == m2
 
 def test_hottest_measurement_empty_list():
     with pytest.raises(ValueError):
