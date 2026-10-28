@@ -1,52 +1,69 @@
-"""Starter tests for the weather module.
-
-These tests deliberately cover only ordinary examples. They show how pytest works,
-but they are not a sufficient test suite for the specification in SPECIFICATION.md.
-"""
-
+import pytest
 from weather import (
-    average_temperature,
-    filter_by_temperature,
-    hottest_measurement,
-    parse_measurement,
     parse_time,
+    parse_measurement,
+    filter_by_temperature,
+    average_temperature,
+    hottest_measurement,
 )
 
+def test_parse_time_normal():
+    assert parse_time("00:00") == 0
+    assert parse_time("23:59") == 1439
+    assert parse_time("12:00") == 720
 
-def test_parse_time_regular_time():
-    assert parse_time("14:21") == 861
+@pytest.mark.parametrize("invalid_time", [
+    "24:00", "12:60", "-1:00", "12:-1", "12", "12:30:15", "ab:cd"
+])
+def test_parse_time_errors(invalid_time):
+    with pytest.raises(ValueError):
+        parse_time(invalid_time)
 
+def test_parse_measurement_spaces():
+    city, time, temp = parse_measurement("  Düsseldorf  ;  09:05  ;  18.3  ")
+    assert city == "Düsseldorf"
+    assert time == 545
+    assert temp == 18.3
 
-def test_parse_measurement_regular_line():
-    assert parse_measurement("Köln;14:21;21.7") == ("Köln", 861, 21.7)
+def test_parse_measurement_bad_input():
+    with pytest.raises(ValueError):
+        parse_measurement(123)
+    with pytest.raises(ValueError):
+        parse_measurement("Köln;14:21")
+    with pytest.raises(ValueError):
+        parse_measurement(" ;14:21;21.7")
+    with pytest.raises(ValueError):
+        parse_measurement("Köln;14:21;kalt")
 
-
-def test_filter_by_temperature_regular_values():
+def test_filter_by_temperature_exact_limits():
     measurements = [
-        ("Köln", 600, 10.0),
-        ("Düsseldorf", 720, 18.5),
-        ("Bonn", 900, 25.0),
+        ("A", 100, 10.0), ("B", 200, 15.0), ("C", 300, 20.0)
     ]
+    res = filter_by_temperature(measurements, 10.0, 20.0)
+    assert len(res) == 3
 
-    assert filter_by_temperature(measurements, 15.0, 20.0) == [
-        ("Düsseldorf", 720, 18.5)
-    ]
+def test_filter_by_temperature_wrong_params():
+    with pytest.raises(ValueError):
+        filter_by_temperature([], 20.0, 10.0)
 
+def test_average_temperature_calc():
+    m = [("Köln", 100, 10.0), ("Köln", 200, 20.0), ("Bonn", 300, 50.0)]
+    assert average_temperature(m, "Köln") == 15.0
 
-def test_average_temperature_regular_values():
-    measurements = [
-        ("Köln", 600, 10.0),
-        ("Köln", 720, 20.0),
-    ]
+def test_average_temperature_missing_city():
+    with pytest.raises(ValueError):
+        average_temperature([("Bonn", 100, 10.0)], "Köln")
 
-    assert average_temperature(measurements, "Köln") == 15.0
+def test_hottest_measurement_normal():
+    m = [("A", 100, 10.0), ("B", 200, 20.0)]
+    assert hottest_measurement(m) == ("B", 200, 20.0)
 
+def test_hottest_measurement_same_temp():
+    m1 = ("A", 100, 30.0)
+    m2 = ("B", 200, 30.0)
+    assert hottest_measurement([m1, m2]) == m1
+    assert hottest_measurement([m2, m1]) == m1
 
-def test_hottest_measurement_with_unique_maximum():
-    measurements = [
-        ("Köln", 600, 10.0),
-        ("Düsseldorf", 720, 25.0),
-        ("Bonn", 900, 20.0),
-    ]
-
-    assert hottest_measurement(measurements) == ("Düsseldorf", 720, 25.0)
+def test_hottest_measurement_empty_list():
+    with pytest.raises(ValueError):
+        hottest_measurement([])
