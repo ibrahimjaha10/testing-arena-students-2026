@@ -142,3 +142,9 @@ def test_strict_return_types_and_identities():
     
     # 3. filter_by_temperature muss eine NEUE Liste im Speicher sein (is not)
     assert res is not m
+
+
+def test_parse_measurement_too_many_fields():
+    # Zu viele Felder (4 statt 3) müssen einen ValueError auslösen
+    with pytest.raises(ValueError):
+        parse_measurement("Köln;14:21;21.7;extra")   
