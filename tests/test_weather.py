@@ -63,6 +63,12 @@ def test_filter_by_temperature_wrong_params():
     with pytest.raises(ValueError):
         filter_by_temperature([], 20.0, 10.0)
 
+def test_filter_by_temperature_duplicates():
+    # doppelte einträge müssen doppelt im ergebnis bleiben
+    m = [("Köln", 100, 15.0), ("Köln", 100, 15.0)]
+    res = filter_by_temperature(m, 10.0, 20.0)
+    assert len(res) == 2
+
 # average_temperature
 def test_average_temperature_calc():
     m = [("Köln", 100, 10.0), ("Köln", 200, 20.0), ("Bonn", 300, 50.0)]
@@ -99,3 +105,20 @@ def test_hottest_measurement_exact_tie():
 def test_hottest_measurement_empty_list():
     with pytest.raises(ValueError):
         hottest_measurement([])
+
+def test_hottest_measurement_all_negative():
+    # hitzerekord muss auch mit reinen minusgraden klappen
+    m = [("A", 100, -20.0), ("B", 200, -5.0), ("C", 300, -15.0)]
+    assert hottest_measurement(m) == ("B", 200, -5.0)
+
+# mutation check
+def test_no_mutation_of_input_lists():
+    # die liste darf von den funktionen nicht verändert werden
+    original_list = [("A", 200, 10.0), ("B", 100, 30.0), ("C", 300, 20.0)]
+    list_copy = original_list.copy()
+    
+    filter_by_temperature(original_list, 0.0, 40.0)
+    average_temperature(original_list, "A")
+    hottest_measurement(original_list)
+    
+    assert original_list == list_copy
