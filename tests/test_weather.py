@@ -13,6 +13,11 @@ def test_parse_time_normal():
     assert parse_time("23:59") == 1439
     assert parse_time("12:00") == 720
 
+def test_parse_time_leading_zeros():
+    # auch einstellige zahlen sind ok
+    assert parse_time("9:5") == 545
+    assert parse_time("09:05") == 545
+
 @pytest.mark.parametrize("invalid_time", [
     "24:00", "12:60", "-1:00", "12:-1", "12", "12:30:15", "ab:cd"
 ])
@@ -28,6 +33,11 @@ def test_parse_measurement_spaces():
     assert city == "Düsseldorf"
     assert time == 545
     assert temp == 18.3
+
+def test_parse_measurement_negative_temp():
+    # minusgrade müssen klappen
+    city, time, temp = parse_measurement("Berlin;12:00;-5.5")
+    assert temp == -5.5
 
 def test_parse_measurement_bad_input():
     with pytest.raises(ValueError):
@@ -57,6 +67,11 @@ def test_filter_by_temperature_wrong_params():
 def test_average_temperature_calc():
     m = [("Köln", 100, 10.0), ("Köln", 200, 20.0), ("Bonn", 300, 50.0)]
     assert average_temperature(m, "Köln") == 15.0
+
+def test_average_temperature_case_sensitive():
+    # groß und kleinschreibung ist wichtig
+    m = [("Köln", 100, 10.0), ("köln", 200, 20.0)]
+    assert average_temperature(m, "Köln") == 10.0
 
 def test_average_temperature_missing_city():
     with pytest.raises(ValueError):
